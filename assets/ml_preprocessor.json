@@ -1,0 +1,93 @@
+{
+  "numeric_features": [
+    "Edad",
+    "Altura",
+    "Peso",
+    "Consumo_Verduras",
+    "Comidas_Diarias",
+    "Consumo_Agua",
+    "Actividad_Física",
+    "Sedentarismo_Digital"
+  ],
+  "numeric_means": [
+    24.27594706220379,
+    1.7017993370853082,
+    86.56030644964454,
+    2.41932875,
+    2.6752237097156395,
+    2.0026608607819902,
+    0.999863605450237,
+    0.6641172796208531
+  ],
+  "numeric_scales": [
+    6.316408217898113,
+    0.09405826473594421,
+    26.245451458121995,
+    0.528383516888933,
+    0.7851613280551591,
+    0.6168094309877314,
+    0.8401129884602366,
+    0.6081140711747528
+  ],
+  "categorical_features": [
+    "Genero",
+    "Antecedentes_Familiares",
+    "Consumo_Hipercalorico",
+    "Picoteo_Entre_Comidas",
+    "Fumador",
+    "Control_Calórico",
+    "Consumo_Alcohol",
+    "Medio_Transporte"
+  ],
+  "categorical_categories": [
+    [
+      "Femenino",
+      "Masculino"
+    ],
+    [
+      "no",
+      "si"
+    ],
+    [
+      "no",
+      "si"
+    ],
+    [
+      "A_veces",
+      "Frecuentemente",
+      "Siempre",
+      "no"
+    ],
+    [
+      "no",
+      "si"
+    ],
+    [
+      "no",
+      "si"
+    ],
+    [
+      "A_veces",
+      "Frecuentemente",
+      "Siempre",
+      "no"
+    ],
+    [
+      "Bicicleta",
+      "Caminando",
+      "Carro",
+      "Moto",
+      "Transporte_publico"
+    ]
+  ],
+  "label_classes": [
+    "Obesidad_Tipo_I",
+    "Obesidad_Tipo_II",
+    "Obesidad_Tipo_III",
+    "Peso_insuficiente",
+    "Peso_normal",
+    "Sobrepeso_Nivel_I",
+    "Sobrepeso_Nivel_II"
+  ],
+  "input_size": 31
+}

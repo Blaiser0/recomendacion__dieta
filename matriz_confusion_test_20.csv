@@ -1,0 +1,8 @@
+,pred_Obesidad_Tipo_I,pred_Obesidad_Tipo_II,pred_Obesidad_Tipo_III,pred_Peso_insuficiente,pred_Peso_normal,pred_Sobrepeso_Nivel_I,pred_Sobrepeso_Nivel_II
+real_Obesidad_Tipo_I,69,0,0,0,0,0,1
+real_Obesidad_Tipo_II,1,59,0,0,0,0,0
+real_Obesidad_Tipo_III,0,0,65,0,0,0,0
+real_Peso_insuficiente,0,0,0,53,1,0,0
+real_Peso_normal,0,0,0,2,55,1,0
+real_Sobrepeso_Nivel_I,0,0,0,0,5,51,2
+real_Sobrepeso_Nivel_II,1,0,0,0,0,0,57

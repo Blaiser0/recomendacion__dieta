@@ -1,0 +1,8 @@
+verdadero,Obesidad_Tipo_I,Obesidad_Tipo_II,Obesidad_Tipo_III,Peso_insuficiente,Peso_normal,Sobrepeso_Nivel_I,Sobrepeso_Nivel_II
+Obesidad_Tipo_I,69,0,0,0,0,0,1
+Obesidad_Tipo_II,1,59,0,0,0,0,0
+Obesidad_Tipo_III,0,0,65,0,0,0,0
+Peso_insuficiente,0,0,0,52,2,0,0
+Peso_normal,0,0,0,0,57,1,0
+Sobrepeso_Nivel_I,0,0,0,0,2,54,2
+Sobrepeso_Nivel_II,2,0,0,0,0,2,54

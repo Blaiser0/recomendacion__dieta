@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "56600216706",
+    "project_id": "proyecto-ia-dieta",
+    "storage_bucket": "proyecto-ia-dieta.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:56600216706:android:e753bf191607ad9b36e09b",
+        "android_client_info": {
+          "package_name": "com.example.diet_recommendation_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "56600216706-hvjvco3hdo6839s01ph1vhodlt8asig1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNiaYSq5XREspDijcTVeWJUCrB9QI-KJI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "56600216706-hvjvco3hdo6839s01ph1vhodlt8asig1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:56600216706:android:6586e6bbf1acff6d36e09b",
+        "android_client_info": {
+          "package_name": "com.example.recomendacion_dieta"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "56600216706-hvjvco3hdo6839s01ph1vhodlt8asig1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNiaYSq5XREspDijcTVeWJUCrB9QI-KJI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "56600216706-hvjvco3hdo6839s01ph1vhodlt8asig1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

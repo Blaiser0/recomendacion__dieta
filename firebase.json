@@ -1,0 +1,27 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "proyecto-ia-dieta",
+          "appId": "1:56600216706:android:6586e6bbf1acff6d36e09b",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "proyecto-ia-dieta",
+          "configurations": {
+            "android": "1:56600216706:android:6586e6bbf1acff6d36e09b",
+            "ios": "1:56600216706:ios:ae9d94d7693b368f36e09b",
+            "web": "1:56600216706:web:a214739bdf3d044236e09b"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
