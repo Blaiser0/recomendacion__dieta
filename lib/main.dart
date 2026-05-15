@@ -18,8 +18,35 @@ class RecomendacionDietaApp extends StatelessWidget {
     return MaterialApp(
       title: 'Recomendación de dieta',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF1565C0),
+          brightness: Brightness.light,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF2F2F7),
+        cardTheme: CardThemeData(
+          elevation: 2,
+          shadowColor: Colors.black.withValues(alpha: 0.08),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          color: Colors.white,
+          clipBehavior: Clip.antiAlias,
+          margin: EdgeInsets.zero,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Color(0xFF1C1C1E),
+          elevation: 0,
+          scrolledUnderElevation: 0.5,
+          surfaceTintColor: Colors.transparent,
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.white,
+          selectedItemColor: Color(0xFF1565C0),
+          unselectedItemColor: Color(0xFF8E8E93),
+          type: BottomNavigationBarType.fixed,
+        ),
       ),
       home: const MainShell(),
     );

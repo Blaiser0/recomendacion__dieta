@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../models/dashboard_stats.dart';
+
 /// Persistencia en Firestore de cada consulta (predicción + dieta asociada).
 class RegistroConsultaFirestore {
   RegistroConsultaFirestore({FirebaseFirestore? firestore})
@@ -27,6 +29,41 @@ class RegistroConsultaFirestore {
       doc['datosEntrada'] = datosEntrada;
     }
     return _db.collection(coleccion).add(doc);
+  }
+
+  /// Agregados en tiempo real (misma colección que [historial]); al guardar una
+  /// consulta el stream emite y el dashboard / gráfico se actualizan.
+  Stream<DashboardStats> watchDashboardStats() {
+    return _db.collection(coleccion).snapshots().map((snap) {
+      final now = DateTime.now();
+      final inicioSemana = now.subtract(const Duration(days: 7));
+      var consultasUltimos7Dias = 0;
+      final porNivel = {for (final k in DashboardStats.ordenNiveles) k: 0};
+      final dietas = <String>{};
+
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        final nivel = data['nivelObesidad'] as String?;
+        if (nivel != null && porNivel.containsKey(nivel)) {
+          porNivel[nivel] = porNivel[nivel]! + 1;
+        }
+        final dieta = data['dietaRecomendada'] as String?;
+        if (dieta != null && dieta.isNotEmpty) {
+          dietas.add(dieta);
+        }
+        final creado = data['creadoEn'];
+        if (creado is Timestamp && creado.toDate().isAfter(inicioSemana)) {
+          consultasUltimos7Dias++;
+        }
+      }
+
+      return DashboardStats(
+        totalRegistros: snap.docs.length,
+        consultasUltimos7Dias: consultasUltimos7Dias,
+        porNivel: porNivel,
+        dietasDistintas: dietas.length,
+      );
+    });
   }
 
   Stream<List<Map<String, Object?>>> historial({int limite = 100}) {
