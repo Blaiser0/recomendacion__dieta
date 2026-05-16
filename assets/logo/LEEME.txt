@@ -1,0 +1,5 @@
+Logo unificado de DietWise:
+
+  logocompleto.png  — isotipo + nombre (fondo transparente)
+
+Colócalo en esta carpeta y ejecuta: flutter pub get

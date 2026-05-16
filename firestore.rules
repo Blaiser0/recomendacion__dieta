@@ -1,9 +1,20 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Registro de consultas (diagnóstico + dieta). Sustituye por reglas con Auth en producción.
-    match /registros_consulta/{id} {
-      allow read, write: if request.time < timestamp.date(2027, 6, 1);
+
+    // Perfil: nombre, email (registro DietWise)
+    match /usuarios/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Consultas de la app (Inicio, Historial, Consulta)
+    // Requiere usuario autenticado. Publicar estas reglas en la consola.
+    match /registros_consulta/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
     }
   }
 }

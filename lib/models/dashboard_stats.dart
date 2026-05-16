@@ -12,6 +12,15 @@ class DashboardStats {
   final Map<String, int> porNivel;
   final int dietasDistintas;
 
+  factory DashboardStats.vacio() {
+    return DashboardStats(
+      totalRegistros: 0,
+      consultasUltimos7Dias: 0,
+      porNivel: {for (final k in ordenNiveles) k: 0},
+      dietasDistintas: 0,
+    );
+  }
+
   static const ordenNiveles = <String>[
     'Obesidad_Tipo_I',
     'Obesidad_Tipo_II',

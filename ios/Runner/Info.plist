@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>DietWise necesita la cámara para actualizar tu foto de perfil.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>DietWise necesita acceso a tus fotos para elegir imagen de perfil.</string>
 </dict>
 </plist>

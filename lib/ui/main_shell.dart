@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/dietwise_theme.dart';
 import 'consulta_formulario_page.dart';
 import 'dashboard_page.dart';
 import 'dietas_info_page.dart';
@@ -60,8 +61,8 @@ class _MainShellState extends State<MainShell> {
             currentIndex: _index,
             onTap: (i) => setState(() => _index = i),
             type: BottomNavigationBarType.fixed,
-            selectedItemColor: const Color(0xFF1565C0),
-            unselectedItemColor: const Color(0xFF8E8E93),
+            selectedItemColor: DietWiseColors.textPrimary,
+            unselectedItemColor: DietWiseColors.textMuted,
             selectedFontSize: 11,
             unselectedFontSize: 11,
             items: const [
