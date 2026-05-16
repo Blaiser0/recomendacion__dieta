@@ -1,10 +1,16 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../domain/dieta_presentacion_catalogo.dart';
 import '../models/dashboard_stats.dart';
 import '../services/auth_service.dart';
 import '../services/registro_consulta_firestore.dart';
 import '../theme/dietwise_theme.dart';
+
+/// Morado pastel del dashboard (tarjeta Perfil).
+const _kPurpleAccent = Color(0xFF7B1FA2);
+const _kPurpleVeryLight = Color(0xFFF3E5F5);
 
 /// Colores: verdes/azules (normal / bajo peso) y naranja/rojo (sobrepeso/obesidad).
 Color _colorNivel(String nivel) {
@@ -58,7 +64,6 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repo = RegistroConsultaFirestore();
-    final textTheme = Theme.of(context).textTheme;
 
     return StreamBuilder<DashboardStats>(
       stream: repo.watchDashboardStats(),
@@ -75,44 +80,9 @@ class DashboardPage extends StatelessWidget {
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: const Color(0xFFE3F2FD),
-                      child: Text(
-                        'R',
-                        style: textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1565C0),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Hi, Renzo',
-                            style: textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1C1C1E),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Bienvenido de nuevo',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: const Color(0xFF6B6B6F),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                child: _DashboardWelcomeHeader(
+                  onIrAPerfil: () => onIrASeccion?.call(4),
                 ),
               ),
             ),
@@ -145,7 +115,7 @@ class DashboardPage extends StatelessWidget {
                   ),
                   _StatCard(
                     title: 'Dietas',
-                    value: stats.dietasDistintas,
+                    value: stats.totalDietasCatalogo,
                     icon: Icons.apple,
                     iconBackground: const Color(0xFFFFF3E0),
                     iconColor: const Color(0xFFE65100),
@@ -171,6 +141,216 @@ class DashboardPage extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Cabecera bajo «Inicio»: avatar (fotoUrl) + saludo dinámico desde Firestore.
+class _DashboardWelcomeHeader extends StatelessWidget {
+  const _DashboardWelcomeHeader({this.onIrAPerfil});
+
+  final VoidCallback? onIrAPerfil;
+
+  static const _avatarRadius = 28.0;
+
+  static String _nombreParaSaludo(Map<String, dynamic>? data, User? user) {
+    if (data == null) {
+      final dn = user?.displayName?.trim();
+      if (dn != null && dn.isNotEmpty) return dn;
+      return 'Usuario';
+    }
+    var nombre = (data['nombre'] as String?)?.trim() ?? '';
+    var apellido = (data['apellido'] as String?)?.trim() ?? '';
+
+    if (apellido.isEmpty && nombre.contains(' ')) {
+      final parts = nombre.split(RegExp(r'\s+'));
+      nombre = parts.first;
+      apellido = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+    }
+    if (nombre.isEmpty) {
+      final dn = user?.displayName?.trim();
+      if (dn != null && dn.isNotEmpty) return dn;
+      return 'Usuario';
+    }
+    if (apellido.isEmpty) return nombre;
+    return '$nombre $apellido';
+  }
+
+  static String _iniciales(Map<String, dynamic>? data, User? user) {
+    if (data != null) {
+      final n = (data['nombre'] as String?)?.trim() ?? '';
+      final a = (data['apellido'] as String?)?.trim() ?? '';
+      if (a.isNotEmpty && n.isNotEmpty) {
+        return '${n[0]}${a[0]}'.toUpperCase();
+      }
+      if (n.isNotEmpty) return n[0].toUpperCase();
+    }
+    final dn = user?.displayName?.trim();
+    if (dn != null && dn.isNotEmpty) {
+      final parts = dn.split(RegExp(r'\s+'));
+      if (parts.length >= 2) {
+        return '${parts.first[0]}${parts[1][0]}'.toUpperCase();
+      }
+      return dn[0].toUpperCase();
+    }
+    return 'U';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final auth = AuthService();
+    final user = auth.usuarioActual;
+
+    if (user == null) {
+      return _filaEstatica(
+        context,
+        saludo: 'Hi, Usuario',
+        avatar: _avatarPlaceholder(textTheme, 'U', fotoUrl: null),
+      );
+    }
+
+    return StreamBuilder(
+      stream: auth.streamPerfilUsuario(user.uid),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data();
+        final fotoUrl = data?['fotoUrl'] as String?;
+        final saludo = 'Hi, ${_nombreParaSaludo(data, user)}';
+
+        final avatar = Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onIrAPerfil,
+            customBorder: const CircleBorder(),
+            child: CircleAvatar(
+              radius: _avatarRadius,
+              backgroundColor: _kPurpleVeryLight,
+              child: _avatarContenido(
+                textTheme: textTheme,
+                fotoUrl: fotoUrl,
+                iniciales: _iniciales(data, user),
+                cargando: snapshot.connectionState == ConnectionState.waiting &&
+                    !snapshot.hasData,
+              ),
+            ),
+          ),
+        );
+
+        return _filaEstatica(
+          context,
+          saludo: saludo,
+          avatar: avatar,
+        );
+      },
+    );
+  }
+
+  Widget _filaEstatica(
+    BuildContext context, {
+    required String saludo,
+    required Widget avatar,
+  }) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        avatar,
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                saludo,
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF1C1C1E),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Bienvenido de nuevo',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF6B6B6F),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _avatarPlaceholder(
+    TextTheme textTheme,
+    String iniciales, {
+    String? fotoUrl,
+  }) {
+    return CircleAvatar(
+      radius: _avatarRadius,
+      backgroundColor: _kPurpleVeryLight,
+      child: _avatarContenido(
+        textTheme: textTheme,
+        fotoUrl: fotoUrl,
+        iniciales: iniciales,
+        cargando: false,
+      ),
+    );
+  }
+
+  Widget _avatarContenido({
+    required TextTheme textTheme,
+    required String? fotoUrl,
+    required String iniciales,
+    required bool cargando,
+  }) {
+    if (cargando) {
+      return Padding(
+        padding: const EdgeInsets.all(14),
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: _kPurpleAccent,
+        ),
+      );
+    }
+    if (fotoUrl != null && fotoUrl.isNotEmpty) {
+      return ClipOval(
+        child: Image.network(
+          fotoUrl,
+          width: _avatarRadius * 2,
+          height: _avatarRadius * 2,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, progress) {
+            if (progress == null) return child;
+            return Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: _kPurpleAccent,
+                  value: progress.expectedTotalBytes != null
+                      ? progress.cumulativeBytesLoaded /
+                          progress.expectedTotalBytes!
+                      : null,
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) => Icon(
+            Icons.person,
+            size: 32,
+            color: _kPurpleAccent.withValues(alpha: 0.85),
+          ),
+        ),
+      );
+    }
+    return Text(
+      iniciales,
+      style: textTheme.headlineSmall?.copyWith(
+        fontWeight: FontWeight.bold,
+        color: _kPurpleAccent,
+      ),
     );
   }
 }
@@ -296,10 +476,8 @@ class _DonutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final total = DashboardStats.ordenNiveles.fold<int>(
-      0,
-      (s, k) => s + (stats.porNivel[k] ?? 0),
-    );
+    final totalCatalogo = stats.totalConsultasEnCatalogo;
+    final numPlanes = DietaPresentacionCatalogo.cantidadDietas;
 
     return Card(
       child: Padding(
@@ -316,7 +494,7 @@ class _DonutCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Distribución por nivel de obesidad (IA) — registros_consulta',
+              'Distribución de consultas entre los $numPlanes planes del catálogo',
               style: textTheme.bodySmall?.copyWith(
                 color: const Color(0xFF6B6B6F),
               ),
@@ -324,7 +502,7 @@ class _DonutCard extends StatelessWidget {
             const SizedBox(height: 16),
             SizedBox(
               height: 200,
-              child: total == 0
+              child: totalCatalogo == 0
                   ? Center(
                       child: Text(
                         'Sin consultas aún.\nRealice una consulta para ver el gráfico.',
@@ -354,7 +532,7 @@ class _DonutCard extends StatelessWidget {
                             PieChartData(
                               sectionsSpace: 2,
                               centerSpaceRadius: 52,
-                              sections: _secciones(stats, total),
+                              sections: _secciones(stats, totalCatalogo),
                               pieTouchData: PieTouchData(enabled: true),
                             ),
                           ),
@@ -363,13 +541,13 @@ class _DonutCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              '$total',
+                              '$totalCatalogo',
                               style: textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
-                              'consultas',
+                              'de $numPlanes planes',
                               style: textTheme.labelMedium?.copyWith(
                                 color: const Color(0xFF6B6B6F),
                               ),
@@ -380,7 +558,7 @@ class _DonutCard extends StatelessWidget {
                     ),
             ),
             const SizedBox(height: 16),
-            _Leyenda(stats: stats, total: total),
+            _Leyenda(stats: stats, total: totalCatalogo),
           ],
         ),
       ),
@@ -389,7 +567,7 @@ class _DonutCard extends StatelessWidget {
 
   List<PieChartSectionData> _secciones(DashboardStats stats, int total) {
     final secciones = <PieChartSectionData>[];
-    for (final nivel in DashboardStats.ordenNiveles) {
+    for (final nivel in ordenNivelesDietasUi) {
       final c = stats.porNivel[nivel] ?? 0;
       if (c == 0) continue;
       final pct = (100.0 * c) / total;
@@ -476,7 +654,7 @@ class _Leyenda extends StatelessWidget {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: DashboardStats.ordenNiveles.length,
+      itemCount: ordenNivelesDietasUi.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 8,
@@ -484,7 +662,7 @@ class _Leyenda extends StatelessWidget {
         childAspectRatio: 4.2,
       ),
       itemBuilder: (context, i) {
-        final nivel = DashboardStats.ordenNiveles[i];
+        final nivel = ordenNivelesDietasUi[i];
         return Row(
           children: [
             Container(

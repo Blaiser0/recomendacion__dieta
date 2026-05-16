@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../domain/dieta_presentacion_catalogo.dart';
 import '../models/dashboard_stats.dart';
 
 /// Persistencia en Firestore de cada consulta (predicción + dieta asociada).
@@ -62,8 +63,7 @@ class RegistroConsultaFirestore {
     final now = DateTime.now();
     final inicioSemana = now.subtract(const Duration(days: 7));
     var consultasUltimos7Dias = 0;
-    final porNivel = {for (final k in DashboardStats.ordenNiveles) k: 0};
-    final dietas = <String>{};
+    final porNivel = {for (final k in ordenNivelesDietasUi) k: 0};
     var total = 0;
 
     for (final doc in snap.docs) {
@@ -72,12 +72,8 @@ class RegistroConsultaFirestore {
       total++;
 
       final nivel = data['nivelObesidad'] as String?;
-      if (nivel != null && porNivel.containsKey(nivel)) {
-        porNivel[nivel] = porNivel[nivel]! + 1;
-      }
-      final dieta = data['dietaRecomendada'] as String?;
-      if (dieta != null && dieta.isNotEmpty) {
-        dietas.add(dieta);
+      if (DietaPresentacionCatalogo.esNivelCatalogo(nivel)) {
+        porNivel[nivel!] = porNivel[nivel]! + 1;
       }
       final creado = data['creadoEn'];
       if (creado is Timestamp && creado.toDate().isAfter(inicioSemana)) {
@@ -89,7 +85,7 @@ class RegistroConsultaFirestore {
       totalRegistros: total,
       consultasUltimos7Dias: consultasUltimos7Dias,
       porNivel: porNivel,
-      dietasDistintas: dietas.length,
+      totalDietasCatalogo: DietaPresentacionCatalogo.cantidadDietas,
     );
   }
 

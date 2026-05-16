@@ -193,6 +193,13 @@ abstract final class DietaPresentacionCatalogo {
   static DietaPresentacion? paraNivel(String nivelModelo) =>
       _porNivel[nivelModelo];
 
+  /// Total de planes dietéticos activos en el catálogo (fuente única para el dashboard).
+  static int get cantidadDietas => ordenNivelesDietasUi.length;
+
+  /// Solo niveles del modelo presentes en el catálogo (excluye textos huérfanos).
+  static bool esNivelCatalogo(String? nivelModelo) =>
+      nivelModelo != null && _porNivel.containsKey(nivelModelo);
+
   static Iterable<DietaPresentacion> todasEnOrdenUi() sync* {
     for (final k in ordenNivelesDietasUi) {
       final d = _porNivel[k];
