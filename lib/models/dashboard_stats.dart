@@ -37,3 +37,24 @@ class DashboardStats {
     return n;
   }
 }
+
+/// Distribución por nivel de obesidad de **toda** la colección (gráfico global).
+class DistribucionGlobalGrafico {
+  const DistribucionGlobalGrafico({required this.porNivel});
+
+  final Map<String, int> porNivel;
+
+  factory DistribucionGlobalGrafico.vacio() {
+    return DistribucionGlobalGrafico(
+      porNivel: {for (final k in ordenNivelesDietasUi) k: 0},
+    );
+  }
+
+  int get totalConsultasEnCatalogo {
+    var n = 0;
+    for (final k in ordenNivelesDietasUi) {
+      n += porNivel[k] ?? 0;
+    }
+    return n;
+  }
+}

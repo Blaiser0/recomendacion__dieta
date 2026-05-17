@@ -40,7 +40,9 @@ class _MainShellState extends State<MainShell> {
         children: [
           DashboardPage(onIrASeccion: (i) => setState(() => _index = i)),
           const ConsultaFormularioPage(),
-          const HistorialConsultasPage(),
+          HistorialConsultasPage(
+            onHacerConsulta: () => setState(() => _index = 1),
+          ),
           const DietasInfoPage(),
           const PerfilPage(),
         ],

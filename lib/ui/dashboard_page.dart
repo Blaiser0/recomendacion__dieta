@@ -135,7 +135,17 @@ class DashboardPage extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-                child: _DonutCard(stats: stats),
+                child: StreamBuilder<DistribucionGlobalGrafico>(
+                  stream: repo.watchDistribucionGlobalGrafico(),
+                  builder: (context, globalSnap) {
+                    if (globalSnap.hasError) {
+                      return _DonutCardError(error: globalSnap.error);
+                    }
+                    final global =
+                        globalSnap.data ?? DistribucionGlobalGrafico.vacio();
+                    return _DonutCard(distribucion: global);
+                  },
+                ),
               ),
             ),
           ],
@@ -468,15 +478,37 @@ class _StatCardState extends State<_StatCard> {
   }
 }
 
-class _DonutCard extends StatelessWidget {
-  const _DonutCard({required this.stats});
+class _DonutCardError extends StatelessWidget {
+  const _DonutCardError({required this.error});
 
-  final DashboardStats stats;
+  final Object? error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Text(
+          'No se pudo cargar el gráfico global.\n$error',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: const Color(0xFF6B6B6F),
+              ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DonutCard extends StatelessWidget {
+  const _DonutCard({required this.distribucion});
+
+  final DistribucionGlobalGrafico distribucion;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final totalCatalogo = stats.totalConsultasEnCatalogo;
+    final totalCatalogo = distribucion.totalConsultasEnCatalogo;
     final numPlanes = DietaPresentacionCatalogo.cantidadDietas;
 
     return Card(
@@ -494,7 +526,8 @@ class _DonutCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Distribución de consultas entre los $numPlanes planes del catálogo',
+              'Distribución global de consultas entre los $numPlanes planes '
+              'del catálogo (todos los usuarios)',
               style: textTheme.bodySmall?.copyWith(
                 color: const Color(0xFF6B6B6F),
               ),
@@ -532,7 +565,7 @@ class _DonutCard extends StatelessWidget {
                             PieChartData(
                               sectionsSpace: 2,
                               centerSpaceRadius: 52,
-                              sections: _secciones(stats, totalCatalogo),
+                              sections: _secciones(distribucion, totalCatalogo),
                               pieTouchData: PieTouchData(enabled: true),
                             ),
                           ),
@@ -558,17 +591,20 @@ class _DonutCard extends StatelessWidget {
                     ),
             ),
             const SizedBox(height: 16),
-            _Leyenda(stats: stats, total: totalCatalogo),
+            _Leyenda(distribucion: distribucion, total: totalCatalogo),
           ],
         ),
       ),
     );
   }
 
-  List<PieChartSectionData> _secciones(DashboardStats stats, int total) {
+  List<PieChartSectionData> _secciones(
+    DistribucionGlobalGrafico distribucion,
+    int total,
+  ) {
     final secciones = <PieChartSectionData>[];
     for (final nivel in ordenNivelesDietasUi) {
-      final c = stats.porNivel[nivel] ?? 0;
+      final c = distribucion.porNivel[nivel] ?? 0;
       if (c == 0) continue;
       final pct = (100.0 * c) / total;
       secciones.add(
@@ -643,9 +679,9 @@ class _ErrorDashboard extends StatelessWidget {
 }
 
 class _Leyenda extends StatelessWidget {
-  const _Leyenda({required this.stats, required this.total});
+  const _Leyenda({required this.distribucion, required this.total});
 
-  final DashboardStats stats;
+  final DistribucionGlobalGrafico distribucion;
   final int total;
 
   @override
@@ -678,7 +714,7 @@ class _Leyenda extends StatelessWidget {
               child: Text(
                 total == 0
                     ? '${_etiquetaCorta(nivel)} — 0 %'
-                    : '${_etiquetaCorta(nivel)} — ${((100 * (stats.porNivel[nivel] ?? 0)) / total).toStringAsFixed(1)} %',
+                    : '${_etiquetaCorta(nivel)} — ${((100 * (distribucion.porNivel[nivel] ?? 0)) / total).toStringAsFixed(1)} %',
                 style: textTheme.bodySmall?.copyWith(
                   color: const Color(0xFF3A3A3C),
                 ),

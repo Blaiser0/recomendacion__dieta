@@ -19,13 +19,6 @@ class RegistroConsultaFirestore {
 
   String? get _uid => _auth.currentUser?.uid;
 
-  /// Documentos del usuario actual (o legacy sin `userId`).
-  bool _esDelUsuario(Map<String, dynamic> data, String uid) {
-    final id = data['userId'];
-    if (id == null) return true;
-    return id == uid;
-  }
-
   Future<void> guardar({
     required String nivelObesidad,
     required String dietaRecomendada,
@@ -58,7 +51,6 @@ class RegistroConsultaFirestore {
 
   DashboardStats _statsDesdeSnapshot(
     QuerySnapshot<Map<String, dynamic>> snap,
-    String uid,
   ) {
     final now = DateTime.now();
     final inicioSemana = now.subtract(const Duration(days: 7));
@@ -68,7 +60,6 @@ class RegistroConsultaFirestore {
 
     for (final doc in snap.docs) {
       final data = doc.data();
-      if (!_esDelUsuario(data, uid)) continue;
       total++;
 
       final nivel = data['nivelObesidad'] as String?;
@@ -89,16 +80,44 @@ class RegistroConsultaFirestore {
     );
   }
 
-  /// Solo escucha Firestore si hay sesión iniciada (evita permission-denied).
+  DistribucionGlobalGrafico _distribucionGlobalDesdeSnapshot(
+    QuerySnapshot<Map<String, dynamic>> snap,
+  ) {
+    final porNivel = {for (final k in ordenNivelesDietasUi) k: 0};
+    for (final doc in snap.docs) {
+      final nivel = doc.data()['nivelObesidad'] as String?;
+      if (DietaPresentacionCatalogo.esNivelCatalogo(nivel)) {
+        porNivel[nivel!] = porNivel[nivel]! + 1;
+      }
+    }
+    return DistribucionGlobalGrafico(porNivel: porNivel);
+  }
+
+  /// Gráfico de dona: todos los `registros_consulta` (sin filtro por usuario).
+  Stream<DistribucionGlobalGrafico> watchDistribucionGlobalGrafico() {
+    return _auth.authStateChanges().asyncExpand((user) {
+      if (user == null) {
+        return Stream.value(DistribucionGlobalGrafico.vacio());
+      }
+      return _db
+          .collection(coleccion)
+          .snapshots()
+          .map(_distribucionGlobalDesdeSnapshot);
+    });
+  }
+
+  /// Tarjetas del inicio: solo consultas del usuario autenticado.
   Stream<DashboardStats> watchDashboardStats() {
     return _auth.authStateChanges().asyncExpand((user) {
       if (user == null) {
         return Stream.value(DashboardStats.vacio());
       }
       final uid = user.uid;
-      return _db.collection(coleccion).snapshots().map(
-            (snap) => _statsDesdeSnapshot(snap, uid),
-          );
+      return _db
+          .collection(coleccion)
+          .where('userId', isEqualTo: uid)
+          .snapshots()
+          .map(_statsDesdeSnapshot);
     });
   }
 
@@ -155,21 +174,27 @@ class RegistroConsultaFirestore {
       final uid = user.uid;
       return _db
           .collection(coleccion)
-          .orderBy('creadoEn', descending: true)
-          .limit(limite)
+          .where('userId', isEqualTo: uid)
           .snapshots()
-          .map(
-            (snap) => snap.docs
-                .where((d) => _esDelUsuario(d.data(), uid))
-                .map((d) {
-              final m = Map<String, Object?>.from(d.data());
-              final creado = m['creadoEn'];
-              if (creado is Timestamp) {
-                m['creadoEn'] = creado.toDate().toIso8601String();
-              }
-              return {'id': d.id, ...m};
-            }).toList(),
-          );
+          .map((snap) {
+        final docs = snap.docs.toList()
+          ..sort((a, b) {
+            final ta = a.data()['creadoEn'];
+            final tb = b.data()['creadoEn'];
+            if (ta is Timestamp && tb is Timestamp) {
+              return tb.compareTo(ta);
+            }
+            return 0;
+          });
+        return docs.take(limite).map((d) {
+          final m = Map<String, Object?>.from(d.data());
+          final creado = m['creadoEn'];
+          if (creado is Timestamp) {
+            m['creadoEn'] = creado.toDate().toIso8601String();
+          }
+          return {'id': d.id, ...m};
+        }).toList();
+      });
     });
   }
 }

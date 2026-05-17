@@ -123,7 +123,10 @@ Map<String, Object?>? _mapaDatosEntrada(Object? raw) {
 }
 
 class HistorialConsultasPage extends StatelessWidget {
-  const HistorialConsultasPage({super.key});
+  const HistorialConsultasPage({super.key, this.onHacerConsulta});
+
+  /// Navega a la pestaña Consulta (índice 1 en [MainShell]).
+  final VoidCallback? onHacerConsulta;
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +156,7 @@ class HistorialConsultasPage extends StatelessWidget {
         }
         final items = snapshot.data ?? [];
         if (items.isEmpty) {
-          return const _HistorialVacio();
+          return _HistorialVacio(onHacerConsulta: onHacerConsulta);
         }
         return ColoredBox(
           color: _kPageBg,
@@ -354,7 +357,9 @@ void _mostrarDesgloseConsulta(
 }
 
 class _HistorialVacio extends StatelessWidget {
-  const _HistorialVacio();
+  const _HistorialVacio({this.onHacerConsulta});
+
+  final VoidCallback? onHacerConsulta;
 
   @override
   Widget build(BuildContext context) {
@@ -363,7 +368,7 @@ class _HistorialVacio extends StatelessWidget {
       color: _kPageBg,
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 36),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -374,35 +379,51 @@ class _HistorialVacio extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: _kAccentBlue.withValues(alpha: 0.12),
-                      blurRadius: 24,
+                      color: _kAccentBlue.withValues(alpha: 0.14),
+                      blurRadius: 28,
                       spreadRadius: 2,
                     ),
                   ],
                 ),
                 child: const Icon(
-                  Icons.history_rounded,
+                  Icons.history_toggle_off_rounded,
                   size: 72,
                   color: _kAccentBlue,
                 ),
               ),
               const SizedBox(height: 28),
               Text(
-                'Aún no hay historial',
+                'No hay historial para mostrar',
                 textAlign: TextAlign.center,
                 style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
                   color: const Color(0xFF1C1C1E),
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Cuando completes tu primera consulta en la pestaña Consulta, '
-                'aparecerá aquí con todos los detalles.',
-                textAlign: TextAlign.center,
-                style: textTheme.bodyLarge?.copyWith(
-                  color: const Color(0xFF6B6B6F),
-                  height: 1.45,
+              const SizedBox(height: 32),
+              FilledButton.icon(
+                onPressed: onHacerConsulta,
+                icon: const Icon(Icons.edit_note_outlined, size: 22),
+                label: const Text(
+                  'Hacer una consulta',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: _kAccentBlue,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: _kBlueLight.withValues(alpha: 0.5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
                 ),
               ),
             ],
