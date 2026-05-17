@@ -249,8 +249,67 @@ enum PerfilReportePdfResultado {
   error,
 }
 
+/// Comprobación previa a exportar (perfil Firestore + historial de consultas).
+enum PerfilReporteElegibilidadExportacion {
+  listo,
+  perfilIncompleto,
+  sinConsultas,
+}
+
 class PerfilReportePdf {
   PerfilReportePdf._();
+
+  static const String mensajePerfilIncompleto =
+      'Para exportar tu reporte, primero debes completar todos los datos '
+      'biométricos en tu perfil.';
+
+  static const String mensajeSinConsultas =
+      'Aún no tienes un diagnóstico disponible. Por favor, realiza al menos '
+      'una consulta nutricional antes de exportar.';
+
+  /// Valida documento `usuarios/{uid}` y conteo en `registros_consulta`.
+  static PerfilReporteElegibilidadExportacion evaluarElegibilidadExportacion({
+    required Map<String, dynamic>? perfilFirestore,
+    required int numConsultasFirestore,
+  }) {
+    if (!perfilBiometricoCompleto(perfilFirestore)) {
+      return PerfilReporteElegibilidadExportacion.perfilIncompleto;
+    }
+    if (numConsultasFirestore < 1) {
+      return PerfilReporteElegibilidadExportacion.sinConsultas;
+    }
+    return PerfilReporteElegibilidadExportacion.listo;
+  }
+
+  /// `nombre`, `apellido`, `edad`, `altura` y `peso` en Firestore, sin vacíos ni cero.
+  static bool perfilBiometricoCompleto(Map<String, dynamic>? perfil) {
+    if (perfil == null) return false;
+    if (!_textoNoVacio(perfil['nombre'])) return false;
+    if (!_textoNoVacio(perfil['apellido'])) return false;
+    if (!_enteroPositivo(perfil['edad'])) return false;
+    if (!_numeroPositivo(perfil['altura'])) return false;
+    if (!_numeroPositivo(perfil['peso'])) return false;
+    return true;
+  }
+
+  static bool _textoNoVacio(Object? valor) {
+    if (valor == null) return false;
+    return valor.toString().trim().isNotEmpty;
+  }
+
+  static bool _enteroPositivo(Object? valor) {
+    if (valor == null) return false;
+    final n = valor is int ? valor : int.tryParse(valor.toString().trim());
+    return n != null && n > 0;
+  }
+
+  static bool _numeroPositivo(Object? valor) {
+    if (valor == null) return false;
+    final n = valor is num
+        ? valor.toDouble()
+        : double.tryParse(valor.toString().trim().replaceAll(',', '.'));
+    return n != null && n > 0;
+  }
 
   /// Una sola página A4, maquetación centrada y tarjetas.
   static Future<PerfilReportePdfResultado> generarYPrevisualizar({

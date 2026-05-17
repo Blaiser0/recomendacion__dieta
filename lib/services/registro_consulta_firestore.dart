@@ -108,6 +108,21 @@ class RegistroConsultaFirestore {
     return snap.docs.length;
   }
 
+  /// Conteo en tiempo real de `registros_consulta` del usuario autenticado.
+  Stream<int> watchConteoConsultasUsuario() {
+    return _auth.authStateChanges().asyncExpand((user) {
+      if (user == null) {
+        return Stream.value(0);
+      }
+      final uid = user.uid;
+      return _db
+          .collection(coleccion)
+          .where('userId', isEqualTo: uid)
+          .snapshots()
+          .map((snap) => snap.docs.length);
+    });
+  }
+
   /// Última consulta del usuario (sin índice compuesto; orden en cliente).
   Future<Map<String, Object?>?> ultimaConsultaParaUsuario(String uid) async {
     final snap =

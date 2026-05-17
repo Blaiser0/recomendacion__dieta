@@ -49,7 +49,6 @@ class _PerfilPageState extends State<PerfilPage> {
   String? _fotoBase64Firestore;
 
   Map<String, Object?>? _ultimaConsulta;
-  var _numConsultas = 0;
 
   @override
   void initState() {
@@ -90,7 +89,6 @@ class _PerfilPageState extends State<PerfilPage> {
     try {
       final perfil = await _auth.obtenerPerfilUsuario(user.uid);
       final ultima = await _consultas.ultimaConsultaParaUsuario(user.uid);
-      final n = await _consultas.contarConsultasUsuario(user.uid);
 
       var nombre = (perfil?['nombre'] as String?)?.trim() ?? '';
       var apellido = (perfil?['apellido'] as String?)?.trim() ?? '';
@@ -128,7 +126,6 @@ class _PerfilPageState extends State<PerfilPage> {
       _fotoUrlFirestore = perfil?['fotoUrl'] as String?;
 
       _ultimaConsulta = ultima;
-      _numConsultas = n;
     } finally {
       if (mounted) setState(() => _cargando = false);
     }
@@ -179,11 +176,10 @@ class _PerfilPageState extends State<PerfilPage> {
     return null;
   }
 
-  String _textoConsultas() {
-    final n = _numConsultas;
-    if (n == 0) return '0 realizados';
-    if (n == 1) return '1 realizado';
-    return '$n realizados';
+  static String _textoConsultasConteo(int n) {
+    if (n == 0) return '0 realizadas';
+    if (n == 1) return '1 realizada';
+    return '$n realizadas';
   }
 
   Future<Uint8List?> _bytesFotoParaPdf() async {
@@ -449,29 +445,80 @@ class _PerfilPageState extends State<PerfilPage> {
     }
   }
 
+  void _mostrarAvisoExportacion(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: _kPurpleAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+  }
+
   Future<void> _exportarPdf() async {
     final user = _auth.usuarioActual;
     if (user == null) return;
 
     setState(() => _generandoPdf = true);
     try {
-      final edad = int.tryParse(_edadCtrl.text.trim());
-      final altura = _doubleDe(_alturaCtrl.text.replaceAll(',', '.'));
-      final peso = _doubleDe(_pesoCtrl.text.replaceAll(',', '.'));
+      final perfil = await _auth.obtenerPerfilUsuario(user.uid);
+      final numConsultas =
+          await _consultas.contarConsultasUsuario(user.uid);
 
+      final elegibilidad = PerfilReportePdf.evaluarElegibilidadExportacion(
+        perfilFirestore: perfil,
+        numConsultasFirestore: numConsultas,
+      );
+
+      if (!mounted) return;
+
+      switch (elegibilidad) {
+        case PerfilReporteElegibilidadExportacion.perfilIncompleto:
+          _mostrarAvisoExportacion(PerfilReportePdf.mensajePerfilIncompleto);
+          return;
+        case PerfilReporteElegibilidadExportacion.sinConsultas:
+          _mostrarAvisoExportacion(PerfilReportePdf.mensajeSinConsultas);
+          return;
+        case PerfilReporteElegibilidadExportacion.listo:
+          break;
+      }
+
+      final nombre = (perfil!['nombre'] as String?)?.trim() ?? '';
+      final apellido = (perfil['apellido'] as String?)?.trim() ?? '';
+      final edadRaw = perfil['edad'];
+      final edad = edadRaw is int
+          ? edadRaw
+          : int.tryParse(edadRaw?.toString().trim() ?? '');
+      final altura = _doubleDe(perfil['altura']);
+      final peso = _doubleDe(perfil['peso']);
+
+      final ultima =
+          await _consultas.ultimaConsultaParaUsuario(user.uid);
       final fotoBytes = await _bytesFotoParaPdf();
+
+      final imc = (altura != null &&
+              altura > 0 &&
+              peso != null &&
+              peso > 0)
+          ? peso / (altura * altura)
+          : _imcDesdePerfilOConsulta();
 
       final resultado = await PerfilReportePdf.generarYPrevisualizar(
         fotoPerfilBytes: fotoBytes,
-        nombre: _nombreCtrl.text.trim(),
-        apellido: _apellidoCtrl.text.trim(),
+        nombre: nombre,
+        apellido: apellido,
         email: user.email ?? '',
         edad: edad,
         altura: altura,
         peso: peso,
-        ultimaConsulta: _ultimaConsulta,
-        numConsultas: _numConsultas,
-        imc: _imcDesdePerfilOConsulta(),
+        ultimaConsulta: ultima,
+        numConsultas: numConsultas,
+        imc: imc,
       );
 
       if (!mounted) return;
@@ -686,10 +733,21 @@ class _PerfilPageState extends State<PerfilPage> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _MiniStatCard(
-                      titulo: 'Consultas',
-                      subtitulo: 'Historial',
-                      valor: _textoConsultas(),
+                    child: StreamBuilder<int>(
+                      stream: _consultas.watchConteoConsultasUsuario(),
+                      builder: (context, snapshot) {
+                        final n = snapshot.data ?? 0;
+                        final valor = snapshot.connectionState ==
+                                    ConnectionState.waiting &&
+                                !snapshot.hasData
+                            ? '…'
+                            : _textoConsultasConteo(n);
+                        return _MiniStatCard(
+                          titulo: 'Consultas',
+                          subtitulo: 'Historial',
+                          valor: valor,
+                        );
+                      },
                     ),
                   ),
                 ],
