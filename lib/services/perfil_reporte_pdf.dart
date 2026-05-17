@@ -8,29 +8,26 @@ import 'package:flutter/services.dart'
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-import '../theme/dietwise_theme.dart';
-
-/// Acentos pastel (referencia visual tipo panel: verde, azul, púrpura).
+/// Identidad DietWise en PDF.
+final PdfColor _kMorado = PdfColor.fromInt(0xFF7B1FA2);
+final PdfColor _kBordeGris = PdfColor.fromInt(0xFFE2E8F0);
+final PdfColor _kFondoEtiqueta = PdfColor.fromInt(0xFFF7FAFC);
 final PdfColor _kAccentGreen = PdfColor.fromInt(0xFF81C784);
 final PdfColor _kAccentBlue = PdfColor.fromInt(0xFF64B5F6);
-final PdfColor _kAccentPurple = PdfColor.fromInt(0xFF9575CD);
 
-final PdfColor _kCardFill = PdfColor.fromInt(0xFFFAFAFA);
+const double _kMargin = 28;
 
-/// Borde exterior suave alineado con identidad DietWise (púrpura pastel).
-final PdfColor _kBordePrincipal = PdfColors.purple100;
+const double _kFontMarca = 14;
+const double _kFontSeccion = 8.5;
+const double _kFontCuerpo = 8;
+const double _kFontMini = 7;
+const double _kFontPie = 6.5;
 
-/// Márgenes generosos (≈40 pt en PDF).
-const double _kMargin = 40;
+const double _kEspSeccion = 7;
+const double _kEspFinal = 10;
 
-const double _kFontTituloDoc = 11;
-const double _kFontSeccion = 9.5;
-const double _kFontCuerpo = 9;
-const double _kFontMini = 7.5;
-const double _kFontPie = 7.5;
-
-const double _kEntreTarjetas = 15;
-const double _kEspFinal = 32;
+const String _kLogoAsset = 'assets/logo/logo.png';
+const String _kLogoFallback = 'assets/logo/logocompleto.png';
 
 String _nivelLegible(Object? v) {
   if (v == null) return '—';
@@ -58,91 +55,161 @@ String _imcTexto(double? imc) {
   return imc.toStringAsFixed(1);
 }
 
-pw.Widget _marcaIcono(PdfColor color) {
+pw.Widget _tituloSeccion(String titulo) {
   return pw.Container(
-    width: 6,
-    height: 6,
+    width: double.infinity,
+    margin: const pw.EdgeInsets.only(bottom: 5),
+    padding: const pw.EdgeInsets.only(left: 8, top: 2, bottom: 2),
     decoration: pw.BoxDecoration(
-      color: color,
-      shape: pw.BoxShape.circle,
+      border: pw.Border(
+        left: pw.BorderSide(color: _kMorado, width: 3.5),
+      ),
+    ),
+    child: pw.Text(
+      titulo.toUpperCase(),
+      style: pw.TextStyle(
+        fontSize: _kFontSeccion,
+        fontWeight: pw.FontWeight.bold,
+        color: _kMorado,
+        letterSpacing: 0.3,
+      ),
     ),
   );
 }
 
-pw.BoxDecoration _decorTarjetaPrincipal() {
-  return pw.BoxDecoration(
-    color: _kCardFill,
-    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(15)),
-    border: pw.Border.all(
-      color: _kBordePrincipal,
-      width: 1.5,
+pw.Widget _encabezadoInstitucional({
+  required Uint8List? logoBytes,
+  required String fecha,
+}) {
+  return pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+    children: [
+      pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          if (logoBytes != null)
+            pw.Image(
+              pw.MemoryImage(logoBytes),
+              width: 35,
+              height: 35,
+              fit: pw.BoxFit.contain,
+            ),
+          if (logoBytes != null) pw.SizedBox(width: 8),
+          pw.Text(
+            'DietWise',
+            style: pw.TextStyle(
+              fontSize: _kFontMarca,
+              fontWeight: pw.FontWeight.bold,
+              color: _kMorado,
+            ),
+          ),
+          pw.Spacer(),
+          pw.Text(
+            'REPORTE NUTRICIONAL',
+            style: pw.TextStyle(
+              fontSize: _kFontSeccion,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.grey800,
+              letterSpacing: 0.6,
+            ),
+          ),
+        ],
+      ),
+      pw.SizedBox(height: 3),
+      pw.Align(
+        alignment: pw.Alignment.centerRight,
+        child: pw.Text(
+          'Generado: $fecha',
+          style: pw.TextStyle(
+            fontSize: _kFontMini,
+            color: PdfColors.grey600,
+          ),
+        ),
+      ),
+      pw.SizedBox(height: 8),
+      pw.Container(height: 1.2, color: _kMorado),
+      pw.SizedBox(height: _kEspSeccion),
+    ],
+  );
+}
+
+pw.Widget _celdaEtiqueta(String texto) {
+  return pw.Container(
+    color: _kFondoEtiqueta,
+    padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+    child: pw.Text(
+      texto,
+      style: pw.TextStyle(
+        fontSize: _kFontMini,
+        fontWeight: pw.FontWeight.bold,
+        color: PdfColors.grey800,
+      ),
     ),
-    boxShadow: [
-      pw.BoxShadow(
-        color: PdfColors.grey400,
-        blurRadius: 3,
-        spreadRadius: 0.5,
-        offset: const PdfPoint(0, 1.2),
-      ),
-    ],
   );
 }
 
-/// Mini-tarjetas dentro de «Resumen de actividad» (IMC / consultas).
-pw.BoxDecoration _decorMiniActividad({required PdfColor acentoBorde}) {
-  return pw.BoxDecoration(
-    color: PdfColors.white,
-    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
-    border: pw.Border.all(color: acentoBorde, width: 1.1),
-    boxShadow: [
-      pw.BoxShadow(
-        color: PdfColors.grey300,
-        blurRadius: 2,
-        spreadRadius: 0.25,
-        offset: const PdfPoint(0, 1),
-      ),
-    ],
-  );
-}
-
-pw.Widget _filaDatoCentrada(
-  String etiqueta,
-  String valor,
-  PdfColor acento,
-) {
+pw.Widget _celdaValor(String texto) {
   return pw.Padding(
-    padding: const pw.EdgeInsets.symmetric(vertical: 4),
-    child: pw.Column(
-      children: [
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.center,
-          mainAxisSize: pw.MainAxisSize.min,
-          children: [
-            _marcaIcono(acento),
-            pw.SizedBox(width: 6),
-            pw.Text(
-              etiqueta.toUpperCase(),
+    padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+    child: pw.Text(
+      texto.isEmpty ? '—' : texto,
+      style: pw.TextStyle(fontSize: _kFontMini, color: PdfColors.grey900),
+      maxLines: 2,
+    ),
+  );
+}
+
+pw.TableRow _filaTablaDatos(String etiqueta, String valor) {
+  return pw.TableRow(
+    children: [
+      _celdaEtiqueta(etiqueta),
+      _celdaValor(valor),
+    ],
+  );
+}
+
+pw.Widget _tablaDatosPersonales(List<pw.TableRow> filas) {
+  return pw.Table(
+    border: pw.TableBorder.all(color: _kBordeGris, width: 0.5),
+    columnWidths: {
+      0: const pw.FlexColumnWidth(1.05),
+      1: const pw.FlexColumnWidth(1.35),
+    },
+    children: filas,
+  );
+}
+
+pw.Widget _fotoPerfilPdf(Uint8List? fotoPerfilBytes) {
+  const tam = 68.0;
+  return pw.Container(
+    width: tam,
+    height: tam,
+    decoration: pw.BoxDecoration(
+      color: PdfColor.fromInt(0xFFEEEEEE),
+      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+      border: pw.Border.all(color: _kBordeGris, width: 0.8),
+    ),
+    child: fotoPerfilBytes != null && fotoPerfilBytes.isNotEmpty
+        ? pw.ClipRRect(
+            horizontalRadius: 10,
+            verticalRadius: 10,
+            child: pw.Image(
+              pw.MemoryImage(fotoPerfilBytes),
+              width: tam,
+              height: tam,
+              fit: pw.BoxFit.cover,
+            ),
+          )
+        : pw.Center(
+            child: pw.Text(
+              'U',
               style: pw.TextStyle(
-                fontSize: _kFontMini,
+                fontSize: 26,
                 fontWeight: pw.FontWeight.bold,
-                color: PdfColors.grey700,
+                color: PdfColors.grey500,
               ),
             ),
-          ],
-        ),
-        pw.SizedBox(height: 3),
-        pw.Text(
-          valor.isEmpty ? '—' : valor,
-          textAlign: pw.TextAlign.center,
-          style: pw.TextStyle(
-            fontSize: _kFontCuerpo,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.grey900,
           ),
-          maxLines: 2,
-        ),
-      ],
-    ),
   );
 }
 
@@ -153,8 +220,12 @@ pw.Widget _miniTarjetaActividad({
 }) {
   return pw.Expanded(
     child: pw.Container(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-      decoration: _decorMiniActividad(acentoBorde: acento),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.white,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+        border: pw.Border.all(color: acento, width: 0.9),
+      ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.center,
         children: [
@@ -162,24 +233,70 @@ pw.Widget _miniTarjetaActividad({
             titulo,
             textAlign: pw.TextAlign.center,
             style: pw.TextStyle(
-              fontSize: _kFontMini - 0.5,
+              fontSize: _kFontMini,
               fontWeight: pw.FontWeight.bold,
               color: acento,
             ),
-            maxLines: 3,
+            maxLines: 2,
           ),
-          pw.SizedBox(height: 5),
+          pw.SizedBox(height: 3),
           pw.Text(
             valor,
             textAlign: pw.TextAlign.center,
             style: pw.TextStyle(
-              fontSize: _kFontCuerpo + 0.5,
+              fontSize: _kFontCuerpo,
               fontWeight: pw.FontWeight.bold,
             ),
-            maxLines: 2,
+            maxLines: 1,
           ),
         ],
       ),
+    ),
+  );
+}
+
+pw.Widget _contenedorRecomendaciones(List<String> puntos) {
+  return pw.Container(
+    width: double.infinity,
+    padding: const pw.EdgeInsets.all(8),
+    decoration: pw.BoxDecoration(
+      color: PdfColors.white,
+      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+      border: pw.Border.all(color: _kBordeGris, width: 0.6),
+    ),
+    child: pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: puntos
+          .map(
+            (p) => pw.Padding(
+              padding: const pw.EdgeInsets.only(bottom: 4),
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    '- ',
+                    style: pw.TextStyle(
+                      fontSize: _kFontMini,
+                      color: _kMorado,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                  pw.Expanded(
+                    child: pw.Text(
+                      p,
+                      style: pw.TextStyle(
+                        fontSize: _kFontMini,
+                        height: 1.3,
+                        color: PdfColors.grey800,
+                      ),
+                      maxLines: 3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+          .toList(),
     ),
   );
 }
@@ -189,7 +306,7 @@ Map<String, String> _estrategiaNutricionalFilas(String? dietaNombre) {
   if (d.contains('hipercal')) {
     return {
       'cal': 'Superávit moderado',
-      'macro': 'CH 50–55 % · Prot. 15–20 % · Grasas 25–30 %',
+      'macro': 'CH 50-55 %, Prot. 15-20 %, Grasas 25-30 %',
       'sup': 'Multivitamínico prudente; vit. D según analítica',
       'obs': 'Priorizar alimentos densos en nutrientes; vigilancia médica.',
     };
@@ -197,7 +314,7 @@ Map<String, String> _estrategiaNutricionalFilas(String? dietaNombre) {
   if (d.contains('muy baja') || d.contains('hipocal')) {
     return {
       'cal': 'Déficit controlado',
-      'macro': 'Prot. 25–30 % · CH moderados · Fibra alta',
+      'macro': 'Prot. 25-30 %, CH moderados, Fibra alta',
       'sup': 'Complejo B si restricción prolongada; valorar vit. D',
       'obs': 'Distribuir tomas; hidratación y actividad supervisada.',
     };
@@ -213,14 +330,14 @@ Map<String, String> _estrategiaNutricionalFilas(String? dietaNombre) {
   if (d.contains('proteín')) {
     return {
       'cal': 'Déficit suave a moderado',
-      'macro': 'Prot. elevada · CH bajo–moderado · Grasas saludables',
+      'macro': 'Prot. elevada, CH bajo-moderado, Grasas saludables',
       'sup': 'Electrolitos si dieta muy baja en CH; consultar profesional',
       'obs': 'Control renal/hepático si la proteína es muy alta.',
     };
   }
   return {
     'cal': 'Equilibrio energético',
-    'macro': 'Plato mixto: ½ vegetales, ¼ integral, ¼ proteína',
+    'macro': 'Plato mixto: 1/2 vegetales, 1/4 integral, 1/4 proteina',
     'sup': 'Ninguno obligatorio; solo según prescripción',
     'obs': 'Ajustar porciones a actividad y objetivos clínicos.',
   };
@@ -357,109 +474,34 @@ class PerfilReportePdf {
         margin: const pw.EdgeInsets.all(_kMargin),
         theme: theme,
         build: (context) {
-          final anchoContenido = context.page.pageFormat.availableWidth;
-
-          final avatar = pw.Container(
-            width: 58,
-            height: 58,
-            decoration: pw.BoxDecoration(
-              shape: pw.BoxShape.circle,
-              border: pw.Border.all(color: _kAccentGreen, width: 2.2),
+          final filasPerfil = <pw.TableRow>[
+            _filaTablaDatos(
+              'Nombre completo',
+              nombreCompleto.isEmpty ? '—' : nombreCompleto,
             ),
-            child: pw.ClipOval(
-              child: fotoPerfilBytes != null && fotoPerfilBytes.isNotEmpty
-                  ? pw.Image(
-                      pw.MemoryImage(fotoPerfilBytes),
-                      fit: pw.BoxFit.cover,
-                      width: 58,
-                      height: 58,
-                    )
-                  : pw.Container(
-                      color: PdfColor.fromInt(0xFFE8F5E9),
-                      alignment: pw.Alignment.center,
-                      child: pw.Text(
-                        'DW',
-                        style: pw.TextStyle(
-                          fontSize: 14,
-                          fontWeight: pw.FontWeight.bold,
-                          color: _kAccentGreen,
-                        ),
-                      ),
-                    ),
-            ),
-          );
+            _filaTablaDatos('Edad', '$edadStr años'),
+            _filaTablaDatos('Altura (cm)', altCm),
+            _filaTablaDatos('Peso (kg)', pesoStr),
+          ];
 
-          return pw.Center(
-            child: pw.SizedBox(
-              width: anchoContenido,
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.center,
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              _encabezadoInstitucional(logoBytes: logoBytes, fecha: fecha),
+
+              _tituloSeccion('PERFIL DEL USUARIO'),
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  if (logoBytes != null)
-                    pw.Image(
-                      pw.MemoryImage(logoBytes),
-                      width: 92,
-                      height: 92,
-                      fit: pw.BoxFit.contain,
-                    ),
-                  if (logoBytes != null) pw.SizedBox(height: 10),
-                  pw.Text(
-                    'REPORTE NUTRICIONAL DE DIETAWISE - DIAGNÓSTICO INTEGRAL',
-                    textAlign: pw.TextAlign.center,
-                    style: pw.TextStyle(
-                      fontSize: _kFontTituloDoc,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.grey900,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                  pw.SizedBox(height: 4),
-                  pw.Text(
-                    'Generado: $fecha',
-                    textAlign: pw.TextAlign.center,
-                    style: pw.TextStyle(
-                      fontSize: _kFontMini,
-                      color: PdfColors.grey600,
-                    ),
-                  ),
-                  pw.SizedBox(height: _kEntreTarjetas),
-
-                  // —— Tarjeta: Perfil del usuario ——
-                  pw.Container(
-                    width: double.infinity,
-                    padding: const pw.EdgeInsets.all(14),
-                    decoration: _decorTarjetaPrincipal(),
+                  pw.Expanded(
                     child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                       children: [
-                        pw.Text(
-                          'PERFIL DEL USUARIO',
-                          style: pw.TextStyle(
-                            fontSize: _kFontSeccion,
-                            fontWeight: pw.FontWeight.bold,
-                            color: _kAccentGreen,
-                          ),
-                        ),
-                        pw.SizedBox(height: 10),
-                        avatar,
-                        pw.SizedBox(height: 12),
-                        _filaDatoCentrada(
-                          'Nombre completo',
-                          nombreCompleto.isEmpty ? '—' : nombreCompleto,
-                          _kAccentGreen,
-                        ),
-                        _filaDatoCentrada('Edad', '$edadStr años', _kAccentBlue),
-                        _filaDatoCentrada(
-                          'Altura (cm)',
-                          altCm,
-                          _kAccentPurple,
-                        ),
-                        _filaDatoCentrada('Peso (kg)', pesoStr, _kAccentGreen),
+                        _tablaDatosPersonales(filasPerfil),
                         if (email.isNotEmpty) ...[
-                          pw.SizedBox(height: 4),
+                          pw.SizedBox(height: 3),
                           pw.Text(
                             email,
-                            textAlign: pw.TextAlign.center,
                             style: pw.TextStyle(
                               fontSize: _kFontMini,
                               color: PdfColors.grey600,
@@ -470,238 +512,134 @@ class PerfilReportePdf {
                       ],
                     ),
                   ),
-                  pw.SizedBox(height: _kEntreTarjetas),
+                  pw.SizedBox(width: 10),
+                  _fotoPerfilPdf(fotoPerfilBytes),
+                ],
+              ),
+              pw.SizedBox(height: _kEspSeccion),
 
-                  // —— Tarjeta: Resumen de actividad ——
-                  pw.Container(
-                    width: double.infinity,
-                    padding: const pw.EdgeInsets.all(12),
-                    decoration: _decorTarjetaPrincipal(),
-                    child: pw.Column(
-                      children: [
-                        pw.Text(
-                          'RESUMEN DE ACTIVIDAD',
-                          style: pw.TextStyle(
-                            fontSize: _kFontSeccion,
-                            fontWeight: pw.FontWeight.bold,
-                            color: _kAccentBlue,
-                          ),
-                        ),
-                        pw.SizedBox(height: 10),
-                        pw.Row(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            _miniTarjetaActividad(
-                              acento: _kAccentGreen,
-                              titulo:
-                                  'ÍNDICE DE\nMASA CORPORAL',
-                              valor: _imcTexto(imc),
-                            ),
-                            pw.SizedBox(width: 12),
-                            _miniTarjetaActividad(
-                              acento: _kAccentBlue,
-                              titulo:
-                                  'CONSULTAS\nREALIZADAS',
-                              valor: consultasTxt,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+              _tituloSeccion('RESUMEN DE ACTIVIDAD'),
+              pw.Row(
+                children: [
+                  _miniTarjetaActividad(
+                    acento: _kAccentGreen,
+                    titulo: 'ÍNDICE DE\nMASA CORPORAL',
+                    valor: _imcTexto(imc),
                   ),
-                  pw.SizedBox(height: _kEntreTarjetas),
-
-                  // —— Último diagnóstico ——
-                  pw.Container(
-                    width: double.infinity,
-                    padding: const pw.EdgeInsets.all(12),
-                    decoration: _decorTarjetaPrincipal(),
-                    child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.center,
-                      children: [
-                        pw.Text(
-                          'ÚLTIMO DIAGNÓSTICO',
-                          style: pw.TextStyle(
-                            fontSize: _kFontSeccion,
-                            fontWeight: pw.FontWeight.bold,
-                            color: _kAccentPurple,
-                          ),
-                        ),
-                        pw.SizedBox(height: 8),
-                        if (ultimaConsulta == null)
-                          pw.Text(
-                            'Sin consultas registradas en la cuenta.',
-                            textAlign: pw.TextAlign.center,
-                            style: pw.TextStyle(fontSize: _kFontCuerpo),
-                          )
-                        else ...[
-                          pw.Text(
-                            'Evaluación: ${_nivelLegible(nivel)}',
-                            textAlign: pw.TextAlign.center,
-                            style: pw.TextStyle(
-                              fontSize: _kFontCuerpo,
-                              fontWeight: pw.FontWeight.bold,
-                            ),
-                          ),
-                          pw.SizedBox(height: 4),
-                          pw.Text(
-                            'Plan asociado: ${dieta ?? '—'}',
-                            textAlign: pw.TextAlign.center,
-                            style: pw.TextStyle(fontSize: _kFontCuerpo),
-                            maxLines: 2,
-                          ),
-                          if (conf is num) ...[
-                            pw.SizedBox(height: 4),
-                            pw.Text(
-                              'Confianza del modelo: ${(conf.toDouble() * 100).toStringAsFixed(1)} %',
-                              textAlign: pw.TextAlign.center,
-                              style: pw.TextStyle(
-                                fontSize: _kFontMini,
-                                color: PdfColors.grey700,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ],
-                    ),
-                  ),
-                  pw.SizedBox(height: _kEntreTarjetas),
-
-                  // —— Resumen última consulta (sustituye plan semanal) ——
-                  pw.Container(
-                    width: double.infinity,
-                    padding: const pw.EdgeInsets.all(12),
-                    decoration: _decorTarjetaPrincipal(),
-                    child: pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.center,
-                      children: [
-                        pw.Text(
-                          'RESUMEN DE ÚLTIMA CONSULTA',
-                          textAlign: pw.TextAlign.center,
-                          style: pw.TextStyle(
-                            fontSize: _kFontSeccion,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.grey900,
-                          ),
-                        ),
-                        pw.SizedBox(height: 8),
-                        pw.Text(
-                          'Puntos clave de la sesión',
-                          style: pw.TextStyle(
-                            fontSize: _kFontMini,
-                            fontWeight: pw.FontWeight.bold,
-                            color: _kAccentBlue,
-                          ),
-                        ),
-                        pw.SizedBox(height: 6),
-                        pw.Wrap(
-                          spacing: 8,
-                          runSpacing: 6,
-                          alignment: pw.WrapAlignment.center,
-                          children: puntos.map((p) {
-                            return pw.Container(
-                              width: (anchoContenido - 8) / 2,
-                              padding: const pw.EdgeInsets.all(6),
-                              decoration: pw.BoxDecoration(
-                                color: PdfColors.white,
-                                borderRadius:
-                                    pw.BorderRadius.circular(8),
-                                border: pw.Border.all(
-                                  color: PdfColors.purple50,
-                                  width: 0.75,
-                                ),
-                              ),
-                              child: pw.Row(
-                                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                children: [
-                                  _marcaIcono(_kAccentPurple),
-                                  pw.SizedBox(width: 6),
-                                  pw.Expanded(
-                                    child: pw.Text(
-                                      p,
-                                      style: pw.TextStyle(
-                                        fontSize: _kFontMini,
-                                        height: 1.2,
-                                      ),
-                                      maxLines: 4,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        pw.SizedBox(height: 10),
-                        pw.Text(
-                          'Estrategia nutricional actual',
-                          style: pw.TextStyle(
-                            fontSize: _kFontMini,
-                            fontWeight: pw.FontWeight.bold,
-                            color: _kAccentGreen,
-                          ),
-                        ),
-                        pw.SizedBox(height: 6),
-                        pw.Table(
-                          border: pw.TableBorder.all(
-                            color: PdfColors.purple50,
-                            width: 0.55,
-                          ),
-                          columnWidths: {
-                            0: const pw.FlexColumnWidth(1.1),
-                            1: const pw.FlexColumnWidth(1.35),
-                            2: const pw.FlexColumnWidth(1.0),
-                            3: const pw.FlexColumnWidth(1.15),
-                          },
-                          children: [
-                            pw.TableRow(
-                              decoration: pw.BoxDecoration(
-                                color: PdfColor.fromInt(0xFFF3E5F5),
-                              ),
-                              children: [
-                                _th('Ajuste calórico'),
-                                _th('Equilibrio de macronutrientes'),
-                                _th('Suplementos recomendados'),
-                                _th('Observaciones'),
-                              ],
-                            ),
-                            pw.TableRow(
-                              children: [
-                                _td(estrategia['cal']!),
-                                _td(estrategia['macro']!),
-                                _td(estrategia['sup']!),
-                                _td(estrategia['obs']!),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  pw.SizedBox(height: _kEspFinal),
-
-                  pw.Text(
-                    'Políticas de seguridad y Términos y condiciones: consulte el texto legal completo en la aplicación DietWise.',
-                    textAlign: pw.TextAlign.center,
-                    style: pw.TextStyle(
-                      fontSize: _kFontPie,
-                      color: PdfColors.grey600,
-                    ),
-                    maxLines: 2,
-                  ),
-                  pw.SizedBox(height: 3),
-                  pw.Text(
-                    'Documento informativo; no sustituye el consejo médico ni la consulta presencial con un profesional de la salud.',
-                    textAlign: pw.TextAlign.center,
-                    style: pw.TextStyle(
-                      fontSize: _kFontPie,
-                      color: PdfColors.grey600,
-                    ),
-                    maxLines: 2,
+                  pw.SizedBox(width: 8),
+                  _miniTarjetaActividad(
+                    acento: _kAccentBlue,
+                    titulo: 'CONSULTAS\nREALIZADAS',
+                    valor: consultasTxt,
                   ),
                 ],
               ),
-            ),
+              pw.SizedBox(height: _kEspSeccion),
+
+              _tituloSeccion('ÚLTIMO DIAGNÓSTICO'),
+              if (ultimaConsulta == null)
+                pw.Text(
+                  'Sin consultas registradas en la cuenta.',
+                  style: pw.TextStyle(fontSize: _kFontCuerpo),
+                )
+              else ...[
+                pw.Text(
+                  'Evaluación: ${_nivelLegible(nivel)}',
+                  style: pw.TextStyle(
+                    fontSize: _kFontCuerpo,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 2),
+                pw.Text(
+                  'Plan asociado: ${dieta ?? '—'}',
+                  style: pw.TextStyle(fontSize: _kFontCuerpo),
+                  maxLines: 2,
+                ),
+                if (conf is num) ...[
+                  pw.SizedBox(height: 2),
+                  pw.Text(
+                    'Confianza del modelo: ${(conf.toDouble() * 100).toStringAsFixed(1)} %',
+                    style: pw.TextStyle(
+                      fontSize: _kFontMini,
+                      color: PdfColors.grey700,
+                    ),
+                  ),
+                ],
+              ],
+              pw.SizedBox(height: _kEspSeccion),
+
+              _tituloSeccion('RESUMEN DE ÚLTIMA CONSULTA'),
+              pw.Text(
+                'Puntos clave de la sesión',
+                style: pw.TextStyle(
+                  fontSize: _kFontMini,
+                  fontWeight: pw.FontWeight.bold,
+                  color: _kAccentBlue,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              _contenedorRecomendaciones(puntos),
+              pw.SizedBox(height: 6),
+              pw.Text(
+                'Estrategia nutricional actual',
+                style: pw.TextStyle(
+                  fontSize: _kFontMini,
+                  fontWeight: pw.FontWeight.bold,
+                  color: _kAccentGreen,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Table(
+                border: pw.TableBorder.all(color: _kBordeGris, width: 0.5),
+                columnWidths: {
+                  0: const pw.FlexColumnWidth(1.1),
+                  1: const pw.FlexColumnWidth(1.35),
+                  2: const pw.FlexColumnWidth(1.0),
+                  3: const pw.FlexColumnWidth(1.15),
+                },
+                children: [
+                  pw.TableRow(
+                    decoration: pw.BoxDecoration(color: _kMorado),
+                    children: [
+                      _thMorado('Ajuste calórico'),
+                      _thMorado('Equilibrio de macronutrientes'),
+                      _thMorado('Suplementos recomendados'),
+                      _thMorado('Observaciones'),
+                    ],
+                  ),
+                  pw.TableRow(
+                    children: [
+                      _td(estrategia['cal']!),
+                      _td(estrategia['macro']!),
+                      _td(estrategia['sup']!),
+                      _td(estrategia['obs']!),
+                    ],
+                  ),
+                ],
+              ),
+
+              pw.Spacer(),
+              pw.Text(
+                'Políticas de seguridad y Términos y condiciones: consulte el texto legal completo en la aplicación DietWise.',
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(
+                  fontSize: _kFontPie,
+                  color: PdfColors.grey600,
+                ),
+                maxLines: 2,
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(
+                'Documento informativo; no sustituye el consejo médico ni la consulta presencial con un profesional de la salud.',
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(
+                  fontSize: _kFontPie,
+                  color: PdfColors.grey600,
+                ),
+                maxLines: 2,
+              ),
+            ],
           );
         },
       ),
@@ -735,7 +673,7 @@ class PerfilReportePdf {
     }
   }
 
-  static pw.Widget _th(String s) {
+  static pw.Widget _thMorado(String s) {
     return pw.Padding(
       padding: const pw.EdgeInsets.all(4),
       child: pw.Text(
@@ -744,6 +682,7 @@ class PerfilReportePdf {
         style: pw.TextStyle(
           fontSize: _kFontMini - 0.5,
           fontWeight: pw.FontWeight.bold,
+          color: PdfColors.white,
         ),
         maxLines: 3,
       ),
@@ -763,12 +702,13 @@ class PerfilReportePdf {
   }
 
   static Future<Uint8List?> _cargarLogo() async {
-    try {
-      final data = await rootBundle.load(DietWiseColors.logoCompletoAsset);
-      return data.buffer.asUint8List();
-    } catch (_) {
-      return null;
+    for (final path in [_kLogoAsset, _kLogoFallback]) {
+      try {
+        final data = await rootBundle.load(path);
+        return data.buffer.asUint8List();
+      } catch (_) {}
     }
+    return null;
   }
 
   static Uint8List? bytesDesdeBase64(String? b64) {
