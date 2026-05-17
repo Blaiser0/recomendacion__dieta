@@ -8,8 +8,13 @@ import 'auth_error_ui.dart';
 import 'dietwise_auth_widgets.dart';
 import 'register_page.dart';
 
+const Color _kPurpleAccent = Color(0xFF7B1FA2);
+
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({super.key, this.mensajeExito});
+
+  /// Mensaje breve tras registro exitoso (p. ej. cuenta creada).
+  final String? mensajeExito;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -23,6 +28,17 @@ class _LoginPageState extends State<LoginPage> {
 
   var _cargando = false;
   var _ocultarPassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final msg = widget.mensajeExito;
+    if (msg != null && msg.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _mostrarExito(msg);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -82,6 +98,32 @@ class _LoginPageState extends State<LoginPage> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  void _mostrarExito(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  msg,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: _kPurpleAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 4),
+        ),
+      );
   }
 
   @override

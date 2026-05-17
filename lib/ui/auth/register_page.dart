@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../../services/auth_service.dart';
 import '../../theme/dietwise_theme.dart';
-import '../main_shell.dart';
 import 'auth_error_ui.dart';
 import 'dietwise_auth_widgets.dart';
+import 'login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -48,9 +48,14 @@ class _RegisterPageState extends State<RegisterPage> {
         email: _email.text,
         password: _password.text,
       );
+      await _auth.cerrarSesion();
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => const MainShell()),
+        MaterialPageRoute<void>(
+          builder: (_) => const LoginPage(
+            mensajeExito: '¡Cuenta creada con éxito!',
+          ),
+        ),
         (_) => false,
       );
     } on FirebaseAuthException catch (e) {
