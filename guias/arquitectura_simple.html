@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DietWise — Diagrama de Arquitectura</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    :root {
+      --purple: #7b1fa2;
+      --purple-light: #f3e5f5;
+      --blue: #1565c0;
+      --blue-light: #e3f2fd;
+      --gray: #757575;
+      --gray-light: #f5f5f5;
+      --line: #424242;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #fff;
+      color: #212121;
+      min-height: 100vh;
+      padding: 24px 20px 32px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--purple);
+    }
+    header p {
+      font-size: 0.85rem;
+      color: var(--gray);
+      margin-top: 4px;
+    }
+    .canvas {
+      position: relative;
+      max-width: 1180px;
+      margin: 0 auto;
+      min-height: 520px;
+    }
+    #connectors {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .columns {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 200px 1fr 220px;
+      gap: 12px;
+      align-items: center;
+      min-height: 500px;
+    }
+    /* —— Izquierda: cilindros DB —— */
+    .col-db {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      padding-top: 8px;
+    }
+    .cylinder {
+      width: 150px;
+      text-align: center;
+      cursor: default;
+      transition: transform 0.2s;
+    }
+    .cylinder:hover { transform: scale(1.03); }
+    .cylinder-body {
+      height: 72px;
+      border: 2px solid var(--gray);
+      border-radius: 36px / 14px;
+      background: linear-gradient(180deg, #fff 0%, var(--gray-light) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      position: relative;
+    }
+    .cylinder-body::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 8%;
+      right: 8%;
+      height: 12px;
+      border: 2px solid var(--gray);
+      border-radius: 50%;
+      background: #fafafa;
+    }
+    .cylinder strong {
+      font-size: 0.72rem;
+      line-height: 1.25;
+      color: #424242;
+      position: relative;
+      z-index: 1;
+    }
+    .cylinder small {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.62rem;
+      color: var(--gray);
+    }
+    .col-db-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+    /* —— Centro: Flutter core —— */
+    .col-core {
+      display: flex;
+      justify-content: center;
+      padding: 0 8px;
+    }
+    .core-shell {
+      width: 100%;
+      max-width: 420px;
+      min-height: 420px;
+      border: 2px dashed var(--purple);
+      border-radius: 12px;
+      padding: 16px 18px 20px;
+      background: #fff;
+      position: relative;
+    }
+    .core-shell-tag {
+      position: absolute;
+      top: 10px;
+      left: 14px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--purple);
+    }
+    .core-shell-tag i { margin-right: 4px; }
+    .core-inner {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: calc(100% - 28px);
+    }
+    .block-logic {
+      flex: 1.2;
+      border: 2px solid var(--purple);
+      border-radius: 8px;
+      background: var(--purple-light);
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: box-shadow 0.2s;
+    }
+    .block-logic:hover {
+      box-shadow: 0 4px 20px rgba(123, 31, 162, 0.2);
+    }
+    .block-logic i {
+      font-size: 1.6rem;
+      color: var(--purple);
+      margin-bottom: 8px;
+    }
+    .block-logic strong {
+      font-size: 0.82rem;
+      color: var(--purple);
+      line-height: 1.3;
+    }
+    .block-logic span {
+      font-size: 0.68rem;
+      color: #5e35b1;
+      margin-top: 6px;
+      line-height: 1.35;
+    }
+    .block-ai {
+      flex: 0.85;
+      border: 2px solid var(--purple);
+      border-radius: 8px;
+      background: #fff;
+      padding: 14px;
+      text-align: center;
+      transition: box-shadow 0.2s;
+    }
+    .block-ai:hover {
+      box-shadow: 0 4px 20px rgba(123, 31, 162, 0.25);
+    }
+    .block-ai i {
+      font-size: 1.4rem;
+      color: var(--purple);
+      margin-bottom: 6px;
+    }
+    .block-ai strong {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--purple);
+      line-height: 1.3;
+    }
+    .block-ai em {
+      display: block;
+      font-size: 0.65rem;
+      font-style: normal;
+      color: var(--gray);
+      margin-top: 4px;
+    }
+    /* —— Derecha: pantallas —— */
+    .col-ui {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .col-ui-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      text-align: center;
+      margin-bottom: 2px;
+    }
+    .screen-wrap {
+      border: 2px dashed var(--blue);
+      border-radius: 10px;
+      padding: 8px 10px 10px;
+      background: #fff;
+      transition: transform 0.2s;
+    }
+    .screen-wrap:hover { transform: translateX(4px); }
+    .screen-wrap-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: var(--blue);
+    }
+    .screen-wrap-head i { font-size: 0.85rem; }
+    .screen-inner {
+      border: 2px solid var(--blue);
+      border-radius: 8px;
+      background: var(--blue-light);
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #0d47a1;
+      line-height: 1.25;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>DietWise — Arquitectura del Sistema</h1>
+    <p>Flujo de datos: Firebase y motor local → pantallas Flutter</p>
+  </header>
+
+  <div class="canvas">
+    <svg id="connectors" aria-hidden="true"></svg>
+
+    <div class="columns">
+      <!-- IZQUIERDA -->
+      <div class="col-db">
+        <div class="col-db-label">Persistencia · Firebase</div>
+        <div class="cylinder" id="db-auth" data-anchor="db-auth">
+          <div class="cylinder-body">
+            <strong>Firebase Auth</strong>
+          </div>
+          <small>Caja de credenciales</small>
+        </div>
+        <div class="cylinder" id="db-firestore" data-anchor="db-firestore">
+          <div class="cylinder-body">
+            <strong>Cloud Firestore</strong>
+          </div>
+          <small>usuarios · registros_consulta</small>
+        </div>
+        <div class="cylinder" id="db-storage" data-anchor="db-storage">
+          <div class="cylinder-body">
+            <strong>Firebase Storage</strong>
+          </div>
+          <small>Fotos de perfil</small>
+        </div>
+      </div>
+
+      <!-- CENTRO -->
+      <div class="col-core">
+        <div class="core-shell" id="core-shell" data-anchor="core">
+          <div class="core-shell-tag">
+            <i class="fa-brands fa-flutter"></i> Flutter · Core App
+          </div>
+          <div class="core-inner">
+            <div class="block-logic" id="block-logic" data-anchor="logic">
+              <i class="fa-solid fa-gears"></i>
+              <strong>Lógica del Sistema / Servicios</strong>
+              <span>AuthService · validación de perfiles · formateo de datos</span>
+            </div>
+            <div class="block-ai" id="block-ai" data-anchor="ai">
+              <i class="fa-solid fa-brain"></i>
+              <strong>Modelo Inteligente Integrado</strong>
+              <em>TensorFlow Lite — inferencia local de red neuronal para el plan nutricional</em>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DERECHA -->
+      <div class="col-ui">
+        <div class="col-ui-label">Interfaz · Cliente</div>
+        <div class="screen-wrap" id="ui-dash" data-anchor="ui-dash">
+          <div class="screen-wrap-head">
+            <span>Mobile App</span>
+            <i class="fa-solid fa-mobile-screen"></i>
+          </div>
+          <div class="screen-inner">Dashboard Principal<br /><small style="font-weight:400;font-size:0.62rem">Métricas y gráfico global</small></div>
+        </div>
+        <div class="screen-wrap" id="ui-form" data-anchor="ui-form">
+          <div class="screen-wrap-head">
+            <span>Mobile App</span>
+            <i class="fa-solid fa-mobile-screen"></i>
+          </div>
+          <div class="screen-inner">Formulario de Consulta IA</div>
+        </div>
+        <div class="screen-wrap" id="ui-hist" data-anchor="ui-hist">
+          <div class="screen-wrap-head">
+            <span>Mobile App</span>
+            <i class="fa-solid fa-mobile-screen"></i>
+          </div>
+          <div class="screen-inner">Historial con Validación</div>
+        </div>
+        <div class="screen-wrap" id="ui-perfil" data-anchor="ui-perfil">
+          <div class="screen-wrap-head">
+            <span>Mobile App</span>
+            <i class="fa-solid fa-mobile-screen"></i>
+          </div>
+          <div class="screen-inner">Perfil y Reporte PDF</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function anchor(el) {
+      const c = document.querySelector('.canvas').getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      return {
+        x: r.left - c.left + r.width / 2,
+        y: r.top - c.top + r.height / 2,
+        right: r.right - c.left,
+        left: r.left - c.left,
+        top: r.top - c.top,
+        bottom: r.bottom - c.top,
+      };
+    }
+
+    function arrowPath(x1, y1, x2, y2, bend) {
+      const mx = bend ? (x1 + x2) / 2 : x1;
+      return `M ${x1} ${y1} L ${mx} ${y1} L ${mx} ${y2} L ${x2} ${y2}`;
+    }
+
+    function draw() {
+      const svg = document.getElementById('connectors');
+      const w = svg.clientWidth;
+      const h = svg.clientHeight;
+      svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+      svg.innerHTML = '';
+
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      defs.innerHTML = `
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <polygon points="0 0, 8 4, 0 8" fill="#424242"/>
+        </marker>`;
+      svg.appendChild(defs);
+
+      const core = document.getElementById('core-shell');
+      const logic = document.getElementById('block-logic');
+      const ai = document.getElementById('block-ai');
+      const dbs = ['db-auth', 'db-firestore', 'db-storage'].map(id => document.getElementById(id));
+      const uis = ['ui-dash', 'ui-form', 'ui-hist', 'ui-perfil'].map(id => document.getElementById(id));
+
+      const c = anchor(core);
+      const l = anchor(logic);
+      const a = anchor(ai);
+
+      dbs.forEach(db => {
+        const p = anchor(db);
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', arrowPath(p.right, p.y, c.left, p.y < l.y ? l.y : a.y, true));
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', '#9e9e9e');
+        path.setAttribute('stroke-width', '1.5');
+        path.setAttribute('marker-end', 'url(#arr)');
+        svg.appendChild(path);
+      });
+
+      const coreRight = c.right;
+      const targets = uis.map(u => anchor(u));
+      targets.forEach(t => {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const startY = (l.y + a.y) / 2;
+        path.setAttribute('d', arrowPath(coreRight, startY, t.left, t.y, true));
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', '#1565c0');
+        path.setAttribute('stroke-width', '1.5');
+        path.setAttribute('marker-end', 'url(#arr)');
+        svg.appendChild(path);
+      });
+
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', (coreRight + targets[0].left) / 2);
+      label.setAttribute('y', targets[0].y - 18);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('font-size', '10');
+      label.setAttribute('fill', '#1565c0');
+      label.textContent = 'Streams · UI reactiva';
+      svg.appendChild(label);
+    }
+
+    window.addEventListener('load', draw);
+    window.addEventListener('resize', draw);
+  </script>
+</body>
+</html>
